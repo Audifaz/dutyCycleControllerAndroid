@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">MyThingy52App</string>
+    <string name="title_location_permission">Need to enable location</string>
+    <string name="text_location_permission">To use the application, please enable the location</string>
+    <string name="ok">ok</string>
+</resources>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="8dp"
+    android:gravity="center"
+    android:orientation="vertical"
+    tools:context=".Activity2">
+
+    <TextView
+        android:id="@+id/deviceName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="Service"
+        android:textSize="50dp" />
+
+    <Button
+        android:id="@+id/getService1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connect Device" />
+
+    <TextView
+        android:id="@+id/phyButtonStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp" />
+
+    <Button
+        android:id="@+id/phyButtonSubscribe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="connectPhysicalDevice"
+        android:text="Physical button subscriber" />
+
+    <TextView
+        android:id="@+id/buttonState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="Button State"
+        android:textSize="50dp" />
+
+    <Button
+        android:id="@+id/sendData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:onClick="sendData"
+        android:text="Send Data" />
+
+    <Button
+        android:id="@+id/disconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="150dp"
+        android:text="Disconnect from device" />
+</LinearLayout>
