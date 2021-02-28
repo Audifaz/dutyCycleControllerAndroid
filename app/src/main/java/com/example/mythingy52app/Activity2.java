@@ -7,14 +7,12 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,15 +22,15 @@ import java.util.UUID;
 
 public class Activity2 extends AppCompatActivity {
     TextView name;
-    TextView service1;
-    TextView buttonState;
     Button getService1;
     Button Disconnect;
+    SeekBar dutySeekbar;
+    TextView textProgress;
     String TAG = "SecondActivity";
     BluetoothGatt gattConnection;
-    int BUTTON_PRESSED = 1;
-    int BUTTON_RELEASED = 0;
     List<BluetoothGattService> servicios;
+    int dutyValueSeekBar=0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,10 +39,10 @@ public class Activity2 extends AppCompatActivity {
         final Intent intent = getIntent();
         final BluetoothDevice device = intent.getParcelableExtra("Example item");
         name = findViewById(R.id.deviceName);
-        service1 = findViewById(R.id.phyButtonStatus);
-        buttonState = findViewById(R.id.buttonState);
         getService1 = findViewById(R.id.getService1);
         Disconnect = findViewById(R.id.disconnect);
+        dutySeekbar = findViewById(R.id.seekBar);
+        textProgress = findViewById(R.id.seekBarVal);
         name.setText(device.getName());
         getService1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -55,20 +53,18 @@ public class Activity2 extends AppCompatActivity {
         Disconnect.setOnClickListener((new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                BluetoothGattCharacteristic BTCharacWrite = servicios.get(2).getCharacteristic(UUID.fromString("00001527-1212-efde-1523-785feabcd123"));
+                if (firstTime == 0)
+                    gattConnection.setCharacteristicNotification(BTCharacWrite, true);
+                BTCharacWrite.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                BTCharacWrite.setValue(0, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+                writefunc = gattConnection.writeCharacteristic(BTCharacWrite);
                 gattConnection.close();
                 gattConnection = null;
                 Intent intent = new Intent(Activity2.this, MainActivity.class);
                 startActivity(intent);
             }
         }));
-        IntentFilter filter = new IntentFilter("com.example.mythingy52.app.MY_INTENT");
-        registerReceiver(gattUpdate, filter);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(gattUpdate);
     }
 
     //BluetoothGattCharacteristic BTCharacWrite = new BluetoothGattCharacteristic()
@@ -112,6 +108,7 @@ public class Activity2 extends AppCompatActivity {
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             super.onServicesDiscovered(gatt, status);
             servicios = gattConnection.getServices();
+            startWriteDuty();
         }
 
 
@@ -128,15 +125,6 @@ public class Activity2 extends AppCompatActivity {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
-            broadcastUpdate.setAction("com.example.mythingy52.app.MY_INTENT");
-            if (characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) == BUTTON_PRESSED) {
-                broadcastUpdate.putExtra("value", "Button On");
-                Log.d(TAG, "Botón oprimido");
-            } else {
-                broadcastUpdate.putExtra("value", "Button Off");
-                Log.d(TAG, "Botón ya no oprimido");
-            }
-            sendBroadcast(broadcastUpdate);
         }
 
         @Override
@@ -168,41 +156,38 @@ public class Activity2 extends AppCompatActivity {
         }
     };
 
-    public void connectPhysicalDevice(View view) {
-        BluetoothGattCharacteristic BTCharac = servicios.get(2).getCharacteristic(UUID.fromString("00001524-1212-efde-1523-785feabcd123"));
-        gattConnection.setCharacteristicNotification(BTCharac, true);
-        BluetoothGattDescriptor descriptor = BTCharac.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"));
-        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        boolean success = gattConnection.writeDescriptor(descriptor);
-        Log.d(TAG, "The notification was enabled successfully?" + success);
-        service1.setText("It is enabled the button subscription");
-    }
-
-    private final BroadcastReceiver gattUpdate = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String input = intent.getStringExtra("value");
-            buttonState.setText(input);
-        }
-    };
-
-    boolean turnLed = false;
     boolean writefunc;
     int firstTime = 0;
 
-    public void sendData(View view) {
-        BluetoothGattCharacteristic BTCharacWrite = servicios.get(2).getCharacteristic(UUID.fromString("00001525-1212-efde-1523-785feabcd123"));
-        if (firstTime == 0)
-            gattConnection.setCharacteristicNotification(BTCharacWrite, true);
-            BTCharacWrite.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-        if (!turnLed) {
-            BTCharacWrite.setValue(1, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-            turnLed = true;
-        } else {
-            BTCharacWrite.setValue(0, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-            turnLed = false;
-        }
-        writefunc = gattConnection.writeCharacteristic(BTCharacWrite);
-        Log.d(TAG, "Esta escribiendo? " + writefunc);
+    void startWriteDuty(){
+        dutySeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int seekBarVal=0;
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
+                seekBarVal=progress;
+                textProgress.setText("Duty Cycle: "+progress+"%");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                dutyValueSeekBar=seekBarVal;
+                BluetoothGattCharacteristic BTCharacWrite = servicios.get(2).getCharacteristic(UUID.fromString("00001527-1212-efde-1523-785feabcd123"));
+                Log.d(TAG, "Valor del SeekBar? " + dutyValueSeekBar);
+                if (firstTime == 0)
+                    gattConnection.setCharacteristicNotification(BTCharacWrite, true);
+                BTCharacWrite.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+
+                BTCharacWrite.setValue(seekBarVal, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+                writefunc = gattConnection.writeCharacteristic(BTCharacWrite);
+                Log.d(TAG, "Esta escribiendo? " + writefunc);
+            }
+        });
     }
+
+
 }
